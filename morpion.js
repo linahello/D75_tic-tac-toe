@@ -82,7 +82,7 @@ class Morpion {
         this.gameOver = true;
         switch(winner) {
             case 'tie':
-			    this.displayEndMessage("Vous êtes à égalité !");
+							this.displayEndMessage("Vous êtes à égalité !");
                 break;
             case this.iaPlayer:
                 this.displayEndMessage("L'IA a gagné !");
@@ -120,18 +120,73 @@ class Morpion {
 		}
 	}
 
+	
+	minimax = (grid, depth, isMaximizing) => {
+		let result = this.getBoardWinner(grid);
+		
+		const scores = {
+			'J1': -1,
+			'J2': 1,
+			'tie': 0,
+		}
+
+		if (result !== null) return scores[result];
+
+		if (isMaximizing) {
+			let bestScore = -Infinity;
+			grid.forEach((line, y) => {
+				line.forEach((cell, x) => {
+					if (!cell) {
+						grid[y][x] = this.iaPlayer;
+						let score = this.minimax(grid, depth + 1, false);
+						grid[y][x] = null;
+						bestScore = Math.max(score, bestScore);
+					}
+				});
+			});
+
+			return bestScore;
+		} else {
+			let bestScore = Infinity;
+			grid.forEach((line, y) => {
+				line.forEach((cell, x) => {
+					if (!cell) {
+						grid[y][x] = this.humanPlayer;
+						let score = this.minimax(grid, depth + 1, true);
+						grid[y][x] = null;
+						bestScore = Math.min(score, bestScore);
+					}
+				});
+			});
+			
+			return bestScore;
+		}
+	}
+
 	doPlayIa = () => {
 		if (this.gameOver) {
 			return;
 		}
 
-		let hasPlayed = false;
-		this.gridMap.forEach((line, y) => {
+		let bestScore = -Infinity;
+		let move;
+		let grid = [...this.gridMap];
+
+		grid.forEach((line, y) => {
 			line.forEach((cell, x) => {
-				if (!cell && !hasPlayed) {
-					hasPlayed = this.drawHit(x, y, this.iaPlayer);
+				if (!cell) {
+					grid[y][x] = this.iaPlayer;
+					let score = this.minimax(grid, 0, false);
+					grid[y][x] = null;
+
+					if (score > bestScore) {
+						bestScore = score;
+						move = { x, y };
+					}
 				}
 			});
 		});
+
+		this.drawHit(move.x, move.y, this.iaPlayer);
 	}
 }
